@@ -1,8 +1,12 @@
 const mongoose = require("mongoose");
 
-mongoose.connect(
-  "mongodb+srv://vishalssb858_db_user:BxNkBcYkcHUA82aK@clusterpaytm1.up0tuda.mongodb.net/",
-);
+const MONGO_URI =
+  process.env.MONGO_URI ||
+  "mongodb+srv://vishalssb858_db_user:BxNkBcYkcHUA82aK@clusterpaytm1.up0tuda.mongodb.net/";
+
+mongoose.connect(MONGO_URI).catch((err) => {
+  console.error("MongoDB connection failed:", err.message);
+});
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -11,13 +15,13 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     lowercase: true,
-    minLenght: 3,
+    minLength: 3,
     maxLength: 30,
   },
   password: {
     type: String,
     required: true,
-    minLenght: 6,
+    minLength: 6,
   },
   firstName: {
     type: String,
