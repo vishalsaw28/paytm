@@ -10,6 +10,8 @@ export const Signup = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   return (
     <div className="bg-slate-300 h-screen flex justify-center">
@@ -47,28 +49,42 @@ export const Signup = () => {
         <div>
           <Button
             onClick={async () => {
-              await axios.post(
-                "http://localhost:3000/api/v1/user/signup",
-                {
-                  username,
-                  firstName,
-                  lastName,
-                  password,
-                },
-                {
-                  headers: {
-                    "Content-Type": "application/json",
+              setErrorMessage("");
+              setSuccessMessage("");
+
+              try {
+                const response = await axios.post(
+                  "http://localhost:3000/api/v1/user/signup",
+                  {
+                    username,
+                    firstName,
+                    lastName,
+                    password,
                   },
-                },
-              );
+                );
+
+                setSuccessMessage(
+                  response.data?.message || "User created successfully",
+                );
+              } catch (error) {
+                setErrorMessage(
+                  error.response?.data?.message || "Signup failed. Try again.",
+                );
+              }
             }}
             label={"Sign up"}
           />
         </div>
+        {errorMessage ? (
+          <div className="text-red-600 text-sm mt-2">{errorMessage}</div>
+        ) : null}
+        {successMessage ? (
+          <div className="text-green-600 text-sm mt-2">{successMessage}</div>
+        ) : null}
         <BottomWarning
           label={"Already have an account?"}
           buttonText={"Sign in"}
-          to={"/sign in"}
+          to={"/signin"}
         />
       </div>
     </div>

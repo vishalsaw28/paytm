@@ -11,47 +11,60 @@ const router = express.Router();
 const signupBody = z.object({
   username: z.string().email(),
   password: z.string().min(6),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
+  firstName: z.string().trim().min(1),
+  lastName: z.string().trim().min(1),
 });
 
 router.post("/signup", async (req, res) => {
-  const body = req.body;
-  const parsedBody = signupBody.safeParse(body);
+  const parsedBody = signupBody.safeParse(req.body);
 
   if (!parsedBody.success) {
-    return res.status(411).json({
+    return res.status(400).json({
       message: "Incorrect inputs",
     });
   }
+
+  const body = parsedBody.data;
 
   const existingUser = await User.findOne({
     username: body.username,
   });
 
   if (existingUser) {
-    return res.status(411).json({
+    return res.status(409).json({
       message: "Email already taken",
     });
   }
 
-  const dbUser = await User.create(body);
-  await Account.create({
-    userId: dbUser._id,
-    balance: 1 + Math.random() * 10000,
-  });
-
-  const token = jwt.sign(
-    {
+  try {
+    const dbUser = await User.create(body);
+    await Account.create({
       userId: dbUser._id,
-    },
-    JWT_SECRET,
-  );
+      balance: 1 + Math.random() * 10000,
+    });
 
-  return res.json({
-    message: "User created successfully",
-    token,
-  });
+    const token = jwt.sign(
+      {
+        userId: dbUser._id,
+      },
+      JWT_SECRET,
+    );
+
+    return res.status(201).json({
+      message: "User created successfully",
+      token,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: "Email already taken",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
 });
 
 const signInBody = z.object({
@@ -63,7 +76,7 @@ const signInHandler = async (req, res) => {
   const parsedBody = signInBody.safeParse(req.body);
 
   if (!parsedBody.success) {
-    return res.status(411).json({
+    return res.status(400).json({
       message: "Incorrect input",
     });
   }
@@ -74,7 +87,7 @@ const signInHandler = async (req, res) => {
   });
 
   if (!user) {
-    return res.status(411).json({
+    return res.status(401).json({
       message: "Error while logging in",
     });
   }
@@ -104,7 +117,7 @@ router.put("/", authMiddleware, async (req, res) => {
   const parsedBody = updateBody.safeParse(req.body);
 
   if (!parsedBody.success) {
-    return res.status(411).json({
+    return res.status(400).json({
       message: "Error while updating information",
     });
   }
